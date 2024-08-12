@@ -1,17 +1,19 @@
-# DL基礎講座2024　最終課題「脳波分類」
+# EEG Classification Project
 
-## 更新
+## Updates
 
-- 2024.06.18 データセットの詳細についての追記
-  - データセットの論文はこちらになります（データセットのリンクからもたどれます）．
+- **2024.06.18**: Added details about the dataset
+  - The paper associated with the dataset is available here (you can also access it via the dataset link):
     - https://elifesciences.org/articles/82580
-  - 配布したデータは論文のセクション"MEG data preprocessing and cleaning"の内容が施されたものになります．
-    - よってサンプリングレートは200Hzです
-  - セクション"MEG data acquisition"に記載のある通り，チャンネルの座標系は[CTF 275 MEG system](https://mne.tools/1.6/auto_examples/visualization/meg_sensors.html#ctf)のものになっております．
-    - チャンネル座標をモデルに組み込みたい際の参考にしてください
-    - 配布データのチャンネル数が271しかない理由については，上記2セクションに記載のある通りです
+  - The distributed data has been processed according to the content in the "MEG data preprocessing and cleaning" section of the paper.
+    - Therefore, the sampling rate is 200Hz.
+  - As stated in the "MEG data acquisition" section, the coordinates of the channels follow the [CTF 275 MEG system](https://mne.tools/1.6/auto_examples/visualization/meg_sensors.html#ctf).
+    - Please refer to this when incorporating channel coordinates into your model.
+    - The reason why the distributed data contains only 271 channels is explained in the above two sections.
 
-## 環境構築
+## Environment Setup
+
+To set up your environment, follow these steps:
 
 ```bash
 conda create -n dlbasics python=3.10
@@ -19,66 +21,23 @@ conda activate dlbasics
 pip install -r requirements.txt
 ```
 
-## ベースラインモデルを動かす
+## Running the Baseline Model
 
-### 訓練
+### Training
 
 ```bash
 python main.py
+```
 
-# オンラインで結果の可視化（wandbのアカウントが必要）
+# Online visualization of the results (requires a wandb account)
 python main.py use_wandb=True
-```
 
-- `outputs/{実行日時}/`に重み`model_best.pt`と`model_last.pt`，テスト入力に対する予測`submission.npy`が保存されます．`submission.npy`をOmnicampusに提出することで，test top-10 accuracyが確認できます．
+## Task Details
 
-  - `model_best.pt`はvalidation top-10 accuracyで評価
+- In this competition, the task is to classify **which class an image belongs to based on the EEG recorded while the subject is viewing the image**.
 
-- 訓練時に読み込む`config.yaml`ファイルは`train.py`，`run()`の`@hydra.main`デコレータで指定しています．新しいyamlファイルを作った際は書き換えてください．
+- The evaluation will be based on top-10 accuracy.
+  - This means the model is considered correct if the correct class is included in the top 10 predicted probabilities.
+  - The chance level is approximately 10 / 1,854 ≒ 0.54%.
 
-- ベースラインは非常に単純な手法のため，改善の余地が多くあります（セクション「考えられる工夫の例」を参考）．そのため，**Omnicampusにおいてベースラインのtest accuracy=1.637%を超えた提出のみ，修了要件として認めることとします．**
 
-### 評価のみ実行
-
-- テストデータに対する評価のみあとで実行する場合．出力される`submission.npy`は訓練で最後に出力されるものと同じです．
-
-```bash
-python eval.py model_path={評価したい重みのパス}.pt
-```
-
-## データセット[[link](https://openneuro.org/datasets/ds004212/versions/2.0.0)]の詳細
-
-- 1,854クラス，22,448枚の画像（1クラスあたり12枚程度）
-  - クラスの例: airplane, aligator, apple, ...
-
-- 各クラスについて，画像を約6:2:2の割合で訓練，検証，テストに分割
-
-- 4人の被験者が存在し，どの被験者からのサンプルかは訓練に利用可能な情報として与えられる (`*_subject_idxs.pt`)．
-
-### データセットのダウンロード
-
-- [こちら](https://drive.google.com/drive/folders/1pgfVamCtmorUJTQejJpF8GhvwXa67rB9?usp=sharing)から`data.zip`をダウンロードし，`data/`ディレクトリに展開してください．
-
-- 画像を事前学習などに用いる場合は，ドライブから`images.zip`をダウンロードし，任意のディレクトリで展開します．{train, val}_image_paths.txtのパスを使用し，自身でデータローダーなどを作成してください．
-
-## タスクの詳細
-
-- 本コンペでは，**被験者が画像を見ているときの脳波から，その画像がどのクラスに属するか**を分類します．
-
-- 評価はtop-10 accuracyで行います．
-  - モデルの予測確率トップ10に正解クラスが含まれているかどうか
-  - つまりchance levelは10 / 1,854 ≒ 0.54%となります．
-
-## 考えられる工夫の例
-
-- 脳波の前処理
-  - 配布したデータに対しては最低限の前処理しか加えられていません．リサンプリングやフィルタリング，スケーリング，ベースライン補正など，波に対する基本的な前処理を試すことで性能の向上が見込まれます．
-- 画像データを用いた事前学習
-  - 本コンペのタスクは脳波のクラス分類ですが，配布してある画像データを脳波エンコーダの事前学習に用いることを許可します．
-  - 例）CLIP [Radford+ 2021]
-- 音声モデルの導入
-  - 脳波と同じ波である音声を扱うアーキテクチャを用いることが有効であると知られています．
-- 過学習を防ぐ正則化やドロップアウト
-- 被験者情報の利用
-  - 被験者ごとに脳波の特性が異なる可能性があるため，被験者情報を利用することで性能向上が見込まれます．
-  - 例）Subject-specific layer [[Defossez+ 2022](https://arxiv.org/pdf/2208.12266)], domain adaptation
