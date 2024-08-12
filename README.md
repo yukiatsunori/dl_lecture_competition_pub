@@ -30,7 +30,9 @@ python main.py
 ```
 
 # Online visualization of the results (requires a wandb account)
+```bash
 python main.py use_wandb=True
+```
 
 ## Task Details
 
